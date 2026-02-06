@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Card Game</title>
+    <style>
+        :root { --primary: #3498db; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #ecf0f1; margin: 0; padding: 20px; }
+        /* Chỉ số game */
+        .stats { margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; color: var(--dark); }
+        /* Mobile 2 cột, Desktop 4 cột */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(2, 100px);
+            gap: 15px;
+            justify-content: center;
+            perspective: 1000px;
+        }
+        @media (min-width: 500px) {
+            .game-board { grid-template-columns: repeat(4, 100px); }
+        }
+        /* Thẻ Card & Hiệu ứng 3D */
+        .card {
+            width: 100px; height: 130px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+        }
+        /* Phóng to khi hover */
+        .card:hover { transform: scale(1.05); }
+        /* Lật thẻ */
+        .card.flipped { transform: rotateY(180deg); }
+        /* Phóng to khi hover thẻ đã lật */
+        .card.flipped:hover { transform: rotateY(180deg) scale(1.05); }
+        .face {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .back { background: var(--dark); color: white; }
+        .front { background: white; transform: rotateY(180deg); }
+        /* Nút bấm */
+        button {
+            margin-top: 30px; padding: 10px 25px; font-size: 1rem;
+            background: var(--primary); color: white; border: none;
+            border-radius: 5px; cursor: pointer; transition: 0.3s;
+        }
+        button:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Memory Game</h1>
+        <div class="stats">Lượt đi: <span id="move-count">0</span></div>
+    </header>
+    <main class="game-board" id="board"></main>
+    <button onclick="initGame()">Chơi lại</button>
+    <script>
+        const icons = ['🍎', '🍌', '🍇', '🍓'];
+        let cards = [...icons, ...icons]; // Tạo 4 cặp (8 thẻ)
+        let flippedCards = [], moves = 0, matchedPairs = 0, lockBoard = false;
+        function initGame() {
+            // Reset trạng thái
+            moves = 0; matchedPairs = 0; flippedCards = []; lockBoard = false;
+            document.getElementById('move-count').innerText = moves;
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            // Trộn thẻ
+            cards.sort(() => Math.random() - 0.5);
+            // HTML cho từng thẻ
+            cards.forEach(icon => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="face back">?</div>
+                    <div class="face front">${icon}</div>
+                `;
+                card.onclick = () => flipCard(card, icon);
+                board.appendChild(card);
+            });
+        }
+        function flipCard(card, icon) {
+            // Ngăn click khi đang đợi lật lại hoặc click vào thẻ đã lật
+            if (lockBoard || card.classList.contains('flipped')) return;
+            card.classList.add('flipped');
+            flippedCards.push({card, icon});
+            if (flippedCards.length === 2) {
+                document.getElementById('move-count').innerText = ++moves;
+                checkMatch();
+            }
+        }
+        function checkMatch() {
+            const [c1, c2] = flippedCards;
+            if (c1.icon === c2.icon) {
+                // Khớp nhau
+                matchedPairs++;
+                flippedCards = [];
+                if (matchedPairs === icons.length) {
+                    setTimeout(() => alert(`Chúc mừng! Bạn thắng sau ${moves} lượt.`), 500);
+                }
+            } else {
+                // Không khớp -> Lật lại sau 0.8s
+                lockBoard = true;
+                setTimeout(() => {
+                    c1.card.classList.remove('flipped');
+                    c2.card.classList.remove('flipped');
+                    flippedCards = [];
+                    lockBoard = false;
+                }, 800);
+            }
+        }
+        // Khởi chạy game
+        initGame();
+    </script>
+</body>
+</html>
